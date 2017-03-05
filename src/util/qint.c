@@ -363,7 +363,7 @@ void qint_decode(BufferReader *br, uint32_t *arr, int len) {
   qintConfig *qc = &configs[*(uint8_t*)br->pos];
   //printf("qc %02x: size %zd\n",*(uint8_t*)br->pos, qc->size );
   for (int i = 0; i < len; i++) {
-    arr[i] = (*(uint32_t*)(br->pos + qc->fields[i].offset) & qc->fields[i].mask);
+    arr[i] = *(uint32_t*)(br->pos + qc->fields[i].offset) & qc->fields[i].mask;
   }
   Buffer_Skip(br, qc->size);
 }
