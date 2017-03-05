@@ -80,7 +80,7 @@ libnu:
 
 module.so: $(MODULE)
 	$(LD) -o $@ $(VARINT) $(INDEX) $(TEXT) $(REDIS) $(UTILOBJS) $(RMUTILOBJS) $(LIBTRIE) \
-		$(QUERY_PARSE) $(SHOBJ_LDFLAGS) $(LIBS) $(LIBNU) -lc -lm -lprofiler
+		$(QUERY_PARSE) $(SHOBJ_LDFLAGS) $(LIBS) $(LIBNU) -lc -lm 
 
 
 release: CFLAGS += $(RELEASEFLAGS)

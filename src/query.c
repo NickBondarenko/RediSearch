@@ -395,23 +395,28 @@ static int cmpHits(const void *e1, const void *e2, const void *udata) {
 }
 
 /* Calculate sum(TF-IDF)*document score for each result */
-double CalculateResultScore(DocumentMetadata *dmd, IndexResult *h) {
+double CalculateResultScore(DocumentMetadata *dmd, IndexResult *h, double minScore) {
+
+  
   if (dmd->score == 0) return 0;
   // IndexResult_Print(h);
   if (h->numRecords == 1) {
-    return dmd->score * (float)h->totalTF / (float)dmd->maxFreq;
+    return dmd->score * (double)h->totalTF / (double)dmd->maxFreq;
     // printf("dmd score: %f, dmd maxFreq: %d, tfidf: %f, tifidf normalized: %f\n",
     // dmd->score, dmd->maxFreq, ret, ret);
   }
 
   double tfidf = 0;
   for (int i = 0; i < h->numRecords; i++) {
-    tfidf += (float)h->records[i].tf * (h->records[i].term ? h->records[i].term->idf : 0);
+    tfidf += (double)h->records[i].tf * (h->records[i].term ? h->records[i].term->idf : 0);
   }
   tfidf *= dmd->score / dmd->maxFreq;
   // printf("dmd score: %f, dmd maxFreq: %d, tfidf: %f, tifidf normalized: %f\n", dmd->score,
   //        dmd->maxFreq, _tfidf, tfidf);
 
+  if (tfidf < minScore) {
+    return 0;
+  }
   tfidf /= (double)IndexResult_MinOffsetDelta(h);
 
   // printf("after normalize: %f\n", tfidf);
@@ -465,20 +470,20 @@ QueryResult *Query_Execute(Query *query) {
     DocumentMetadata *dmd = DocTable_Get(&query->ctx->spec->docs, h->docId);
 
     // skip deleted documents
-    if (!dmd || dmd->flags & Document_Deleted) {
+    if (dmd->flags & Document_Deleted) {
       ++numDeleted;
       continue;
     }
 
     // IndexResult_Print(h);
-    h->finalScore = CalculateResultScore(dmd, h);
-
+    h->finalScore = CalculateResultScore(dmd, h, minScore);
+    
     if (heap_count(pq) < heap_size(pq)) {
       heap_offerx(pq, h);
       pooledHit = NULL;
       if (heap_count(pq) == heap_size(pq)) {
         IndexResult *minh = heap_peek(pq);
-        minScore = minh->totalTF;
+        minScore = minh->finalScore;
       }
     } else {
       if (h->finalScore >= minScore) {

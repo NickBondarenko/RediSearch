@@ -6,7 +6,7 @@
 #include "rmalloc.h"
 #include "util/qint.h"
 
-#define INDEX_BLOCK_SIZE 100
+#define INDEX_BLOCK_SIZE 75
 #define INDEX_BLOCK_INITIAL_CAP 2
 
 #define INDEX_LAST_BLOCK(idx) (idx->blocks[idx->size - 1])
@@ -272,7 +272,7 @@ inline void IR_Seek(IndexReader *ir, t_offset offset, t_docId docId) {
   ir->lastId = docId;
 }
 
-int _isPos(InvertedIndex *idx, uint32_t i, t_docId docId) {
+inline int _isPos(InvertedIndex *idx, uint32_t i, t_docId docId) {
   if (idx->blocks[i].firstId <= docId &&
       (i == idx->size - 1 || idx->blocks[i + 1].firstId > docId)) {
     return 1;
@@ -290,13 +290,12 @@ int indexReader_skipToBlock(IndexReader *ir, t_docId docId) {
   if (_isPos(idx, ir->currentBlock, docId)) {
     return 1;
   }
-  if (docId >= idx->blocks[idx->size - 1].firstId) {
-    ir->currentBlock = idx->size - 1;
-    goto found;
-  }
+  // if (docId >= idx->blocks[idx->size - 1].firstId) {
+  //   ir->currentBlock = idx->size - 1;
+  //   goto found;
+  // }
   uint32_t top = idx->size, bottom = ir->currentBlock;
-  uint32_t i = bottom;
-  uint32_t newi;
+  uint32_t i = (bottom+top)/2;
 
   while (bottom <= top) {
     // LG_DEBUG("top %d, bottom: %d idx %d, i %d, docId %d\n", top, bottom,

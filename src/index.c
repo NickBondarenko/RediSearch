@@ -344,7 +344,7 @@ int II_Read(void *ctx, IndexResult *hit) {
       if (rc == INDEXREAD_OK) {
         ++nh;
       } else {
-        ic->lastDocId++;
+        ++ic->lastDocId;
       }
     }
 
@@ -359,7 +359,7 @@ int II_Read(void *ctx, IndexResult *hit) {
       }
 
       // advance the doc id so next time we'll read a new record
-      ic->lastDocId++;
+      ++ic->lastDocId;
 
       // // make sure the flags are matching.
       if ((hit->flags & ic->fieldMask) == 0) {
@@ -367,7 +367,7 @@ int II_Read(void *ctx, IndexResult *hit) {
       }
 
       // If we need to match slop and order, we do it now, and possibly skip the result
-      if (ic->maxSlop >= 0 && hit != NULL) {
+      if (ic->maxSlop >= 0) {
         if (!IndexResult_IsWithinRange(hit, ic->maxSlop, ic->inOrder)) {
           continue;
         }
