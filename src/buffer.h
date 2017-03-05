@@ -42,8 +42,14 @@ typedef struct {
 } BufferWriter;
 
 size_t Buffer_Write(BufferWriter *b, void *data, size_t len);
+size_t Buffer_WriteAt(BufferWriter *b, size_t offset, void *data, size_t len);
 size_t Buffer_Truncate(Buffer *b, size_t newlen);
 
+/* Write to the buffer at a given location and seek back to the current location. Return 0 if the location is over capacity */
+size_t Buffer_WriteAt(BufferWriter *b, size_t offset, void *data, size_t len);
+
+/* Seek the writer to a given location, return either the new location or 0 if it's over capacity */
+size_t BufferWriter_Seek(BufferWriter *b, size_t offset);
 BufferWriter NewBufferWriter(Buffer *b);
 BufferReader NewBufferReader(Buffer *b);
 

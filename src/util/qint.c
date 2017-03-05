@@ -5,24 +5,25 @@
 #include "../buffer.h"
 #include "../rmalloc.h"
 
-size_t qint_encode(char *ptr, uint32_t arr[], int len) {
+size_t qint_encode(BufferWriter *bw, uint32_t arr[], int len) {
   if (len <= 0 || len > 4) return 0;
-  size_t ret = 1;
-  char *leading = ptr;
-  *leading = 0;
-  ptr++;
-
-  for (int i = 0; i < len; i++) {
+  
+  char leading = 0;
+  size_t pos = Buffer_Offset(bw->buf);
+  size_t ret = Buffer_Write(bw, "\0", 1);
+  
+    for (int i = 0; i < len; i++) {
     int n = 0;
     while (arr[i] && n < 4) {
-      *ptr++ = (char)(arr[i] & 0xff);
+      
+      ret+=Buffer_Write(bw, (char *)&arr[i], 1);
       n++;
-      ret++;
       arr[i] = arr[i] >> 8;
     }
-    *leading |= (((n-1) & 0x03) << i * 2);
+    leading |= (((n-1) & 0x03) << i * 2);
   }
 
+  Buffer_WriteAt(bw, pos, &leading, 1);
   return ret;
 }
 
@@ -38,47 +39,50 @@ size_t _qint_encode(char *leading, BufferWriter *bw, uint32_t i, int offset) {
   return ret;
 }
 
-size_t qint_encode1(BufferWriter *bw, uint32_t i);
-size_t qint_encode2(BufferWriter *bw, uint32_t i1, uint32_t i2);
-size_t qint_encode3(BufferWriter *bw, uint32_t i1, uint32_t i2, uint32_t i3);
-size_t qint_encode4(BufferWriter *bw, uint32_t i1, uint32_t i2, uint32_t i3, uint32_t i4);
-
-
 size_t qint_encode1(BufferWriter *bw, uint32_t i) {
   size_t ret = 1;
-  char *leading = bw->pos;
+  char leading = 0;
+  size_t pos = Buffer_Offset(bw->buf);
   Buffer_Write(bw, "\0", 1);
-  ret += _qint_encode(leading, bw, i, 0);
+  ret += _qint_encode(&leading, bw, i, 0);
+  Buffer_WriteAt(bw, pos, &leading, 1);
   return ret;
 }
 
 size_t qint_encode2(BufferWriter *bw, uint32_t i1, uint32_t i2) {
   size_t ret = 1;
-  char *leading = bw->pos;
+  char leading = 0;
+  size_t pos = Buffer_Offset(bw->buf);
   Buffer_Write(bw, "\0", 1);
-  ret += _qint_encode(leading, bw, i1, 0);
-  ret += _qint_encode(leading, bw, i2, 1);
+  ret += _qint_encode(&leading, bw, i1, 0);
+  ret += _qint_encode(&leading, bw, i2, 1);
+  Buffer_WriteAt(bw, pos, &leading, 1);
   return ret;
 }
 
 size_t qint_encode3(BufferWriter *bw, uint32_t i1, uint32_t i2, uint32_t i3) {
   size_t ret = 1;
-  char *leading = bw->pos;
+  char leading = 0;
+  size_t pos = Buffer_Offset(bw->buf);
   Buffer_Write(bw, "\0", 1);
-  ret += _qint_encode(leading, bw, i1, 0);
-  ret += _qint_encode(leading, bw, i2, 1);
-  ret += _qint_encode(leading, bw, i3, 2);
+  ret += _qint_encode(&leading, bw, i1, 0);
+  ret += _qint_encode(&leading, bw, i2, 1);
+  ret += _qint_encode(&leading, bw, i3, 2);
+  Buffer_WriteAt(bw, pos, &leading, 1);
   return ret;
 }
 
 size_t qint_encode4(BufferWriter *bw, uint32_t i1, uint32_t i2, uint32_t i3, uint32_t i4) {
   size_t ret = 1;
-  char *leading = bw->pos;
+  char leading = 0;
+  size_t pos = Buffer_Offset(bw->buf);
   Buffer_Write(bw, "\0", 1);
-  ret += _qint_encode(leading, bw, i1, 0);
-  ret += _qint_encode(leading, bw, i2, 1);
-  ret += _qint_encode(leading, bw, i3, 2);
-  ret += _qint_encode(leading, bw, i3, 3);
+  ret += _qint_encode(&leading, bw, i1, 0);
+  ret += _qint_encode(&leading, bw, i2, 1);
+  ret += _qint_encode(&leading, bw, i3, 2);
+  ret += _qint_encode(&leading, bw, i3, 3);
+    Buffer_WriteAt(bw, pos, &leading, 1);
+
   return ret;
 }
 
@@ -353,12 +357,44 @@ qintConfig configs[256] = {
 {.fields = {{1, 0xffffffff},{5, 0xffffffff},{9, 0xffffffff},{13, 0xffffffff},}, .size = 17 },
 };
 
-typedef unsigned char *qint;
-uint32_t qint_decode(qint p, int offset, uint32_t mask) {
-  return  *(uint32_t*)(p+offset) & mask;
+
+inline void qint_decode(BufferReader *br, uint32_t *arr, int len) {
+  qintConfig *qc = &configs[*(uint8_t*)br->pos];
+  for (int i = 0; i < len; i++) {
+    arr[i] = (*(uint32_t*)(br->pos + qc->fields[i].offset) & qc->fields[i].mask);
+  }
+  Buffer_Skip(br, qc->size);
 }
 
+
 #define qint_member(p, i) (*(uint32_t*)(p+configs[*p].fields[i].offset) & configs[*p].fields[i].mask)
+
+inline void qint_decode1(BufferReader *br, uint32_t *i) {
+  *i = qint_member(br->pos, 0);
+  Buffer_Skip(br, configs[*(uint8_t*)br->pos].size);
+}
+
+inline void qint_decode2(BufferReader *br, uint32_t *i, uint32_t *i2) {
+  *i = qint_member(br->pos, 0);
+  *i2 = qint_member(br->pos, 1);
+  Buffer_Skip(br, configs[*(uint8_t*)br->pos].size);
+}
+
+inline void qint_decode3(BufferReader *br, uint32_t *i, uint32_t *i2, uint32_t *i3) {
+  *i = qint_member(br->pos, 0);
+  *i2 = qint_member(br->pos, 1);
+  *i3 = qint_member(br->pos, 2);
+  Buffer_Skip(br, configs[*(uint8_t*)br->pos].size);
+}
+
+inline void qint_decode4(BufferReader *br, uint32_t *i, uint32_t *i2, uint32_t *i3, uint32_t *i4) {
+  *i = qint_member(br->pos, 0);
+  *i2 = qint_member(br->pos, 1);
+  *i3 = qint_member(br->pos, 2);
+  *i3 = qint_member(br->pos, 4);
+  Buffer_Skip(br, configs[*(uint8_t*)br->pos].size);
+}
+
 
 void printConfig(unsigned char c) {
 
@@ -386,35 +422,38 @@ int main(int argc, char **argv){
   Buffer *b = NewBuffer(1024);
   BufferWriter bw = NewBufferWriter(b);
   size_t sz = 0;
-  //uint32_t arr[4] = {1000, 100, 300,4 };
   int x = 0;
-  while (x < 1000) {
-    sz += qint_encode4(&bw, 1000, 100, 300, 4);
+  int N = 10000000;
+  while (x < N) {
+      uint32_t arr[4] = {1000, 100, 300,4 };
+
+    sz += qint_encode(&bw, arr, 4);
+     //printf("sz: %zd, x: %d\n",sz,  x);
+
     x++;
   }
 
-  printf("sz: %zd, x: %d\n",sz,  x);
   
   unsigned char *buf = b->data;
   qintConfig config = configs[*(uint8_t*)buf];
-  uint64_t total;
+  uint64_t total = 0;
   TimeSample ts;
   
   TimeSampler_Start(&ts);
-    for (int i = 0; i < 100; i++) {
-      for (int n = 0 ; n < 4; n++) {
-        printf("%d\n", qint_member(buf, n));
+  BufferReader br = NewBufferReader(b);
+  uint32_t i1, i2, i3, i4;
+    for (int i = 0; i < N; i++) {
+        qint_decode4(&br, &i1, &i2, &i3, &i4);
+        total += i1;
 
-      }
+      
       TimeSampler_Tick(&ts);
-      buf+=configs[*buf].size;
     }
   TimeSampler_End(&ts);
-  printf("Total: %zd, %fns/iter", TimeSampler_DurationNS(&ts), (double)TimeSampler_DurationNS(&ts)/(double)ts.num);
+  printf("Total: %zdms for %d iters, %fns/iter", TimeSampler_DurationMS(&ts), ts.num, (double)TimeSampler_DurationNS(&ts)/(double)ts.num);
   printf("%d\n", total);
   //   //printf("%d %x\n",config.fields[i].offset, config.fields[i].mask);
   //   printf("%d\n", );
   // }
-  printf("\n%d\n", qint_decode(buf, 1, 0xffff));
   return 0;
 }
