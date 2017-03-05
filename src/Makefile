@@ -2,7 +2,7 @@
 # find the OS
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
-CFLAGS= -Wall -Wno-unused-function -Wno-unused-variable -Wno-pointer-sign -fPIC  -std=gnu99 -I./ -DREDIS_MODULE_TARGET
+CFLAGS= -g -ggdb -Wall -Wno-unused-function -Wno-unused-variable -Wno-pointer-sign -fPIC  -std=gnu99 -I./ -DREDIS_MODULE_TARGET
 # Compile flags for linux / osx
 ifeq ($(uname_S),Linux)
 	SHOBJ_CFLAGS ?= -fno-common -g -ggdb
@@ -22,7 +22,7 @@ INDEX=index.o forward_index.o index_result.o expander.o doc_table.o numeric_filt
 TEXT=tokenize.o stemmer.o dep/snowball/libstemmer.o
 REDIS= redis_index.o query.o spec.o  module.o
 QUERY_PARSE=query_parser/tokenizer.o query_parser/parser.o query_parser/parse.o
-UTILOBJS=util/heap.o util/logging.o util/fnv.o util/triemap.o
+UTILOBJS=util/heap.o util/logging.o util/fnv.o util/triemap.o util/qint.o
 RMUTILOBJS=rmutil/librmutil.a
 LIBTRIE=trie/libtrie.a
 LIBNU=dep/libnu/libnu.a
@@ -80,7 +80,7 @@ libnu:
 
 module.so: $(MODULE)
 	$(LD) -o $@ $(VARINT) $(INDEX) $(TEXT) $(REDIS) $(UTILOBJS) $(RMUTILOBJS) $(LIBTRIE) \
-		$(QUERY_PARSE) $(SHOBJ_LDFLAGS) $(LIBS) $(LIBNU) -lc -lm
+		$(QUERY_PARSE) $(SHOBJ_LDFLAGS) $(LIBS) $(LIBNU) -lc -lm -lprofiler
 
 
 release: CFLAGS += $(RELEASEFLAGS)

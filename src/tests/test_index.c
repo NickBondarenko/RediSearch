@@ -264,8 +264,8 @@ int testUnion() {
 
 int testIntersection() {
 
-  InvertedIndex *w = createIndex(100000, 4);
-  InvertedIndex *w2 = createIndex(100000, 2);
+  InvertedIndex *w = createIndex(1000000, 4);
+  InvertedIndex *w2 = createIndex(1000000, 2);
   IndexReader *r1 = NewIndexReader(w, NULL, 0xff, w->flags, NULL, 0);
   IndexReader *r2 = NewIndexReader(w2, NULL, 0xff, w2->flags, NULL, 0);
 

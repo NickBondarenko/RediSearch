@@ -22,18 +22,18 @@ inline size_t Buffer_Write(BufferWriter *bw, void *data, size_t len) {
 
 size_t BufferWriter_Seek(BufferWriter *b, size_t offset) {
   if (offset > b->buf->cap) {
-    return 0;
+    return b->buf->offset;
   }
   b->pos = b->buf->data + offset;
   b->buf->offset = offset;
+  
   return offset;
 }
 
 size_t Buffer_WriteAt(BufferWriter *b, size_t offset, void *data, size_t len) {
   size_t pos = b->buf->offset;
-  if (!BufferWriter_Seek(b, offset)) {
-    return 0;
-  }
+  BufferWriter_Seek(b, offset);
+    
   size_t sz = Buffer_Write(b, data, len);
   BufferWriter_Seek(b, pos);
   return sz;
