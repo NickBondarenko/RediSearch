@@ -179,6 +179,7 @@ int __indexResult_withinRangeUnordered(VarintVectorIterator *iters, int *positio
   for (int i = 0; i < num; i++) {
     positions[i] = VV_Next(&iters[i]);
   }
+
   int minPos, maxPos, min, max;
   max = _arrayMax(positions, num, &maxPos);
 

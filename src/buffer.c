@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <sys/param.h>
 
-size_t Buffer_Write(BufferWriter *bw, void *data, size_t len) {
+inline size_t Buffer_Write(BufferWriter *bw, void *data, size_t len) {
 
   Buffer *buf = bw->buf;
   if (buf->offset + len > buf->cap) {
@@ -47,7 +47,7 @@ BufferReader NewBufferReader(Buffer *b) {
 void Buffer_Init(Buffer *b, size_t cap) {
   b->cap = cap;
   b->offset = 0;
-  b->data = rm_malloc(cap);
+  b->data = malloc(cap);
 }
 
 /**

@@ -1,7 +1,7 @@
-#ifndef __MDMA_TYPES_H__
-#define __MDMA_TYPES_H__
-#include <stdlib.h>
+#ifndef __REDISEARCH_TYPES_H__
+#define __REDISEARCH_TYPES_H__
 
+#include <stdlib.h>
 #include <stdint.h>
 
 typedef u_int32_t t_docId;

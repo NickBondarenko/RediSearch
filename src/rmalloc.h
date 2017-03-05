@@ -33,6 +33,15 @@ static char *rm_strndup(const char *s, size_t n) {
 #define rm_strndup(s, n) strndup(s, n)
 #endif
 
+static void RM_PatchAlloc() {
+  RedisModule_Alloc = malloc;
+  RedisModule_Realloc = realloc;
+  RedisModule_Calloc = calloc;
+  RedisModule_Free = free;
+  RedisModule_Strdup = strdup;
+}
+
+
 #define rm_new(x) rm_malloc(sizeof(x))
 
 #endif /* __RMUTIL_ALLOC__ */
