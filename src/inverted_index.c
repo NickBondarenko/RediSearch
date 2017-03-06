@@ -6,7 +6,7 @@
 #include "rmalloc.h"
 #include "util/qint.h"
 
-#define INDEX_BLOCK_SIZE 75
+#define INDEX_BLOCK_SIZE 100
 #define INDEX_BLOCK_INITIAL_CAP 2
 
 #define INDEX_LAST_BLOCK(idx) (idx->blocks[idx->size - 1])
@@ -290,10 +290,7 @@ int indexReader_skipToBlock(IndexReader *ir, t_docId docId) {
   if (_isPos(idx, ir->currentBlock, docId)) {
     return 1;
   }
-  // if (docId >= idx->blocks[idx->size - 1].firstId) {
-  //   ir->currentBlock = idx->size - 1;
-  //   goto found;
-  // }
+ 
   uint32_t top = idx->size, bottom = ir->currentBlock;
   uint32_t i = (bottom+top)/2;
 
@@ -311,13 +308,8 @@ int indexReader_skipToBlock(IndexReader *ir, t_docId docId) {
       bottom = i+1;
     }
     i = (bottom + top) / 2;
-    // // LG_DEBUG("top %d, bottom: %d, new i: %d\n", top, bottom, newi);
-    // if (newi == i) {
-    //   break;
-    // }
-    // i = newi;
   }
-  ir->currentBlock = i;
+  ir->currentBlock = i+1;
 
 found:
   ir->lastId = 0;
